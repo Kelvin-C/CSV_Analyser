@@ -535,7 +535,6 @@ class GUITable(GUIMain):
         self.__insertdropdown(self.frame, len(self.headings)+1, self.headings)
         self.__insertchecklist(self.frame, len(self.headings)+1)
         self.__insertfilename(self.frame, len(self.headings)+2)
-        self.__insertuntickbox(self.frame, len(self.headings)+2)
         self.window.update()
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
         self.window.mainloop()
@@ -625,18 +624,6 @@ class GUITable(GUIMain):
         filename_label.pack()
         return
 
-    def __insertuntickbox(self, frame, column):
-        """
-        Inserts a button to untick all boxes in the checklist.
-        """
-        untickbox_frame = Tk.Frame(frame)
-        untickbox_frame.grid(row=1, rowspan=1, column=column, sticky='EWNS')
-
-        self.untickbutton = Tk.Button(untickbox_frame, text="Untick All", command=self.__untickall)
-
-        self.untickbutton.pack()
-        return
-
     def __refresh_optionmenu(self):
         """
         This function resets the table checklist when the optionmenu is clicked.
@@ -651,14 +638,6 @@ class GUITable(GUIMain):
         for widget in self.window.winfo_children():
             widget.destroy()
         self.__initwindow()
-
-    def __untickall(self):
-        """
-        Unticks all boxes in the checklist when the untick box is clicked.
-        """
-        for i in range(len(self.CheckVar)):
-            self.CheckVar[i].set(0)
-        return
 
     def __initiateCheckVar(self):
         """

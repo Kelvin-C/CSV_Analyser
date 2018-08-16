@@ -1,3 +1,22 @@
+# |**********************************************************************;
+# * Project           : csv_analyser
+# *
+# * Author            : Kelvin-C
+# *
+# * Program name      : gui.py
+# *
+# * Python Version    : 2.7.14
+# *
+# * Date created      : 25 September 2017
+# *
+# * Purpose           : A gui which allows .csv files to be analysed.
+# *
+# * Revision History  : v1.0
+# *
+# |**********************************************************************;
+
+
+
 import Tkinter as Tk
 import tkFileDialog
 import tkFont
@@ -7,6 +26,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime as dt
+import webbrowser
 
 class GUIMain():
     def __init__(self):
@@ -15,13 +35,18 @@ class GUIMain():
         This class controls everything that occurs on the main window.
         """
         self.window = Tk.Tk()
-        os.chdir(os.getcwd()+'/csv')
+        self.window.title('CSV Analyser')
+        if os.path.exists(os.getcwd()+'/csv'):
+            os.chdir(os.getcwd()+'/csv')
+        else:
+            os.chdir(os.getcwd())
         self.output_dir = os.getcwd()
         self.file_dropdown_name = Tk.StringVar(self.window)
         self.column_dropdown_name = Tk.StringVar(self.window)
         self.column_variables = []
         self.CheckVar = []
         self.CheckVar_graph = []
+        self.__plots = []
         self.excel_path = Tk.StringVar(self.window)
         self.__initgrid()
         self.window.mainloop()
@@ -41,6 +66,8 @@ class GUIMain():
         self.__row0()
         self.__row1()
         self.__nothingrow(frame=self.window, row=1, rowspan=1)
+        self.__initmenu()
+        self.window.config(menu=self.menubar)
 
     def __safeinitgrid(self):
         """
@@ -64,6 +91,8 @@ class GUIMain():
         self.__row0()
         self.__row1()
         self.__row2()
+        self.__initmenu()
+        self.window.config(menu=self.menubar)
 
         #Creates scroll window for the checklists
         self.scrollwindow, self.canvas = self._initframe(self.window)
@@ -73,9 +102,58 @@ class GUIMain():
         self.__nothingrow(self.scrollwindow, rowspan=2)
         self.window.update()
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
-
+        self.__keybinds()
         self.__lastrow()
 
+
+    def __initmenu(self):
+        """
+        Creates the menu bar
+        """
+        self.menubar = Tk.Menu(self.window)
+        menu = Tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Help", menu=menu)
+        menu.add_command(label="eactivities", command=self._openeacivities)
+        menu.add_command(label="About", command=self._opencredits)
+
+    def _opencredits(self):
+        """
+        Creates a windows showing the credits, from menu bar
+        """
+        credits_window = Tk.Tk()
+        credits_window.title('CSV Analyser')
+        canvas = Tk.Canvas(credits_window, bg="white", width=400, height=150,
+                             bd=0, highlightthickness=0)
+        canvas.create_text(200, 30, fill="darkblue", font="Times 20 italic bold",
+                                text="CSV Analyser (v1.0)")
+        canvas.create_text(150, 70, fill="black", font="Times 14",
+                           text="CSV Analyser was created by")
+        canvas.create_text(292, 70, fill="black", font="Times 14 bold",
+                           text="Kelvin")
+        canvas.create_text(60, 110, fill="black", font="Times 14 underline",
+                           text="Email:")
+        canvas.create_text(200, 110, fill="blue", font="Times 14 underline",
+                           text="kelvin.chan14@imperial.ac.uk")
+        canvas.pack()
+
+    def _openeacivities(self):
+        """
+        Creates the eactivities window from menu bar
+        """
+        eactivities_window = Tk.Tk()
+        eactivities_window.title('eactivities')
+        canvas = Tk.Canvas(eactivities_window, bg="white", width=400, height=170,
+                           bd=0, highlightthickness=0)
+        canvas.create_text(200, 30, fill="darkblue", font="Times 20 italic bold",
+                           text="Links to eactivities")
+        button1 = Tk.Button(eactivities_window, fg="blue", font="Times 14 underline", text="eactivities.union.ic.ac.uk",
+                            command=lambda: webbrowser.open('https://eactivities.union.ic.ac.uk/'), anchor=Tk.W)
+        button1_window = canvas.create_window(100, 60, anchor=Tk.NW, window=button1)
+
+        button2 = Tk.Button(eactivities_window, fg="blue", font="Times 14 underline", text="eactivities > finance/transactions",
+                            command=lambda: webbrowser.open('https://eactivities.union.ic.ac.uk/finance/transactions'), anchor=Tk.W)
+        button2_window = canvas.create_window(100, 110, anchor=Tk.NW, window=button2)
+        canvas.pack()
 
     def _initframe(self, window):
         """
@@ -101,6 +179,22 @@ class GUIMain():
         # pack canvas after scrollbars to allow scrollbars to be at correct places.
         canvas.pack(fill="both", expand=True)
         return frame, canvas
+
+    def __keybinds(self):
+        self.canvas.focus_set()
+        self.canvas.bind("<1>", lambda event: self.canvas.focus_set())
+        self.canvas.bind("<Left>", lambda event: self.canvas.xview_scroll(-1, "units"))
+        self.canvas.bind("<Right>", lambda event: self.canvas.xview_scroll(1, "units"))
+        self.canvas.bind("<Up>", lambda event: self.canvas.yview_scroll(-1, "units"))
+        self.canvas.bind("<Down>", lambda event: self.canvas.yview_scroll(1, "units"))
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.canvas.bind_all("<Shift-MouseWheel>", self._sidescroll)
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(-1 * (event.delta / 120), "units")
+
+    def _sidescroll(self, event):
+        self.canvas.xview_scroll(-1 * (event.delta / 120), "units")
 
     def _opencsv(self, excel_path):
         """
@@ -164,7 +258,7 @@ class GUIMain():
         row0.grid(row=0, column=0)#, columnspan=self.__maxcolumn)
 
         helv36 = tkFont.Font(family='Helvetica', size=12, weight=tkFont.BOLD)
-        self.__windowtitle = Tk.Label(row0, text="CSV File Analyser", font=helv36)
+        self.__windowtitle = Tk.Label(row0, text="CSV Analyser", font=helv36)
         row0.pack(fill=Tk.X)
         self.__windowtitle.pack(fill=Tk.X)
 
@@ -178,13 +272,13 @@ class GUIMain():
         self.excel_path_label = Tk.Label(row1, text="CSV Location")
         self.excel_path_entry = Tk.Entry(row1, bd=5, textvariable=self.excel_path)
         self.excel_path_browse = Tk.Button(row1, text="Browse", command=self._askfile)
-        self.refreshbutton = Tk.Button(row1, text="Refresh", command=self.__refresh)
+        #self.refreshbutton = Tk.Button(row1, text="Refresh", command=self.__refresh)
 
         row1.pack(fill=Tk.X)
         self.excel_path_label.pack(side=Tk.LEFT, padx=10)
         self.excel_path_entry.pack(side=Tk.LEFT, fill=Tk.X, expand=True)
-        self.excel_path_browse.pack(side=Tk.LEFT)
-        self.refreshbutton.pack(side=Tk.LEFT, padx=10)
+        self.excel_path_browse.pack(side=Tk.LEFT, padx=10)
+        #self.refreshbutton.pack(side=Tk.LEFT, padx=10)
 
     def __row2(self):
         """
@@ -238,18 +332,26 @@ class GUIMain():
         lastrow = Tk.Frame(self.window)
         lastrow.grid(row=self.__maxrow)
 
-        nothing1 = self.__nothingwidget(frame=lastrow)
+        nothing0 = self.__nothingwidget(frame=lastrow, width=25)
+        tick_button = Tk.Button(lastrow, text="Tick/untick all", command=self._tickuntick)
+        nothing1 = self.__nothingwidget(frame=lastrow, width=10)
         table_button = Tk.Button(lastrow, text="Plot Table", command=self._plottable)
-        nothing2 = self.__nothingwidget(frame=lastrow, width=60)
+        nothing2 = self.__nothingwidget(frame=lastrow, width=20)
         plot_button = Tk.Button(lastrow, text="Plot Graph", command=self._plotgraph)
-        nothing3 = self.__nothingwidget(frame=lastrow)
+        nothing3 = self.__nothingwidget(frame=lastrow, width=10)
+        remove_plot_button = Tk.Button(lastrow, text="Delete Last Plot", command=self._removegraph)
+        nothing4 = self.__nothingwidget(frame=lastrow, width=20)
 
         lastrow.pack(fill=Tk.X)
+        nothing0.pack(fill=Tk.X, side=Tk.LEFT, expand=True)
+        tick_button.pack(side=Tk.LEFT)
         nothing1.pack(fill=Tk.X, side=Tk.LEFT, expand=True)
         table_button.pack(side=Tk.LEFT)
         nothing2.pack(fill=Tk.X, side=Tk.LEFT, expand=True)
         plot_button.pack(side=Tk.LEFT)
         nothing3.pack(fill=Tk.X, side=Tk.LEFT, expand=True)
+        remove_plot_button.pack(side=Tk.LEFT)
+        nothing4.pack(fill=Tk.X, side=Tk.LEFT, expand=True)
 
     def _askfile(self):
         """
@@ -302,6 +404,16 @@ class GUIMain():
         column_elements = np.append(np.array([headings[i]]), column_elements)
         return column_elements
 
+    def _tickuntick(self):
+        """
+        Unticks all boxes in the checklist when the untick box is clicked.
+        """
+        num = self.CheckVar[0].get()
+        rev_num = not int(bool(num))
+        for i in range(len(self.CheckVar)):
+            self.CheckVar[i].set(rev_num)
+        return
+
     def _plottable(self):
         """
         Creates the GUITable class and produces a table with the class
@@ -309,13 +421,27 @@ class GUIMain():
         GUITable(self.excel_path.get(), self.CheckVar, self.file_dropdown_name.get())
         return
 
+    def _removegraph(self):
+        """
+        Remove the last graph that was plotted
+        """
+        if len(self.__plots) > 0:
+            plot = self.__plots[-1]
+            lines = plot.pop(0)
+            lines.remove()
+            del lines
+            self.__plots = self.__plots[:-1]
+            plt.show()
+        else:
+            return
+
     def _plotgraph(self):
         """
         This function deals with plotting the graph.
         """
 
         #delete rows in table that aren't ticked
-        csv_table = self._deleterows(self.CheckVar_graph, self.column_variables, self.csv_table)
+        csv_table, headings = self._deleterows(self.CheckVar_graph, self.column_variables, self.csv_table)
 
         # sort csv_table into date ascending order
         csv_table = self._timesort(csv_table, column_index=0, delimiter='/')
@@ -345,6 +471,7 @@ class GUIMain():
             self.__plotdates(dates, accum_amount)
             plt.ylabel('Amount (%s)' % unichr(163))
             plt.grid()
+        plt.title('+'.join(headings))
         plt.legend(loc='best')
         plt.show()
         return
@@ -356,7 +483,8 @@ class GUIMain():
         x = [dt.datetime.strptime(date, '%d/%m/%Y').date() for date in dates_list]
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
         plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-        plt.plot(x, y_list, label=self.file_dropdown_name.get())
+        line = plt.plot(x, y_list, label=self.file_dropdown_name.get())
+        self.__plots.append(line)
         plt.gcf().autofmt_xdate()
         plt.xlabel("Date")
         return
@@ -367,6 +495,7 @@ class GUIMain():
         """
         CheckVarGet = map(lambda value: value.get(), CheckVar)
         CheckVarGet = np.array(CheckVarGet)
+        headings = column_variables[1:]
 
         if 0 in CheckVarGet:
             deletenames_indices = np.where(CheckVarGet == 0)[0]
@@ -375,8 +504,8 @@ class GUIMain():
                 checklist_column = np.where(np.array(self.headings) == checklist_heading)[0]
                 csv_table_transpose = np.transpose(csv_table)
                 csv_table = np.delete(csv_table, np.where(csv_table_transpose[checklist_column[0]] == column_variables[deletenames_indices[i] + 1]), 0)
-
-        return csv_table
+            headings = np.delete(headings, deletenames_indices)
+        return csv_table, headings
 
     def _timesortDMY(self, time1, time2, delimiter='/'):
         """
@@ -418,7 +547,7 @@ class GUIMain():
         else:
             return False
 
-    def _timesort(self, list, column_index=0, delimiter='/'):
+    def _timesort_OLD(self, list, column_index=0, delimiter='/'):
         """
         Sorts a 2D list into time order.
         list = list variable name
@@ -441,7 +570,18 @@ class GUIMain():
                             stop_k_loop = 1
         return new_list
 
+    def _timesort(self, table, column_index=0, delimiter='/', reverse=False):
+        dates = np.transpose(table)[column_index]
+        dates_parts = list(map(lambda date: date.split(delimiter), dates))
+        sort_column = list(map(lambda parts: ''.join(parts[::-1]), dates_parts))
+
+        csv_table = [n for _, n in sorted(zip(sort_column, table), key=lambda pair: pair[0], reverse=reverse)]
+        return csv_table
+
     def _cidnumbersort(self, list, column_index=3):
+        """
+        Sort CID numbers in ascending/descending order.
+        """
         numbersort = self._numbersort
         j = column_index
         new_list = [list[0]]
@@ -468,7 +608,7 @@ class GUIMain():
         cid = '0'*add_zeros + cid
         return cid
 
-    def _generalnumbersort(self, list, column_index=2):
+    def _generalnumbersort_OLD(self, list, column_index=2):
         numbersort = self._numbersort
         j = column_index
         new_list = [list[0]]
@@ -485,6 +625,20 @@ class GUIMain():
                             stop_k_loop = 1
         return new_list
 
+    def _generalnumbersort(self, table, column_index, reverse=False):
+        """
+        Sort the table according the numbers in column 'column_index'.
+        """
+
+        #Create a new list of the column and remove the commas in the numbers of the new list
+        sort_column = list(map(lambda n: ''.join(n.split(',')), np.transpose(table)[column_index]))
+
+        #Convert the numbers from string to float
+        sort_column = list(map(lambda n: float(n), sort_column))
+
+        #Sort the original table according to the list of floats.
+        csv_table = [n for _, n in sorted(zip(sort_column, table), key=lambda pair: pair[0], reverse=reverse)]
+        return csv_table
 
 class GUITable(GUIMain):
     def __init__(self, excel_path, CheckVar, filename):
@@ -506,6 +660,7 @@ class GUITable(GUIMain):
         self.column_variables = []
 
         self.window = Tk.Tk()
+        self.window.title(filename)
         sizex = 1000
         sizey = 600
         posx = 100
@@ -524,9 +679,7 @@ class GUITable(GUIMain):
         Initiates the frame and its widgets. This is ran when window is refreshed.
         """
 
-        column_index = np.where(np.array(self.headings) == self.column_dropdown_name.get())[0]
-        if not not column_index:   #if column_index is not empty
-            self.column_variables = self._combine_elements(self.headings, self.csv_table, column_index[0])
+        self.__updatecolumndropdown()
 
         self.frame, self.canvas = self._initframe(self.window)
         self.canvas.create_window(0, 0, window=self.frame, anchor='nw')
@@ -535,10 +688,38 @@ class GUITable(GUIMain):
         self.__insertdropdown(self.frame, len(self.headings)+1, self.headings)
         self.__insertchecklist(self.frame, len(self.headings)+1)
         self.__insertfilename(self.frame, len(self.headings)+2)
-        self.__insertuntickbox(self.frame, len(self.headings)+2)
         self.window.update()
         self.canvas.config(scrollregion=self.canvas.bbox("all"))
+        self.__keybinds()
         self.window.mainloop()
+
+    def __updatecolumndropdown(self):
+        """
+        Allows the variables of the column given in the dropdown list to be stored for the checklist.
+        """
+        column_index = np.where(np.array(self.headings) == self.column_dropdown_name.get())[0]
+        if len(column_index) > 0:  # if column_index is not empty
+            self.column_variables = self._combine_elements(self.headings, self.csv_table, column_index[0])
+
+    def __keybinds(self):
+        """
+        Sets the keybinds for the window.
+        """
+        self.canvas.focus_set()
+        self.canvas.bind("<1>", lambda event: self.canvas.focus_set())
+        self.canvas.bind("<Left>", lambda event: self.canvas.xview_scroll(-1, "units"))
+        self.canvas.bind("<Right>", lambda event: self.canvas.xview_scroll(1, "units"))
+        self.canvas.bind("<Up>", lambda event: self.canvas.yview_scroll(-1, "units"))
+        self.canvas.bind("<Down>", lambda event: self.canvas.yview_scroll(1, "units"))
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        self.canvas.bind_all("<Shift-MouseWheel>", self._sidescroll)
+
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(-1 * (event.delta / 120), "units")
+
+    def _sidescroll(self, event):
+        self.canvas.xview_scroll(-1 * (event.delta / 120), "units")
+
 
     def __insertheadings(self, frame, headings, csv_table):
         """
@@ -551,37 +732,43 @@ class GUITable(GUIMain):
         frame.columnconfigure((0, len(headings) + 1), weight=1)  # when window is resized
 
         for j in range(len(headings)):
-            if headings[j] == 'Date':
-                date_column_index = j
-                button_date = Button()
-                element = Tk.Button(frame, text=headings[j], font=helv36, relief='ridge',
-                                    command=lambda: self._buttontimesort(frame, headings, csv_table, button_date, date_column_index))
-            elif headings[j] == 'CID/Card Number':
-                cid_column_index = j
-                button_cid = Button()
-                element = Tk.Button(frame, text=headings[j], font=helv36, relief='ridge',
-                                    command=lambda: self._buttoncidsort(frame, headings, csv_table, button_cid, cid_column_index))
-            elif headings[j] == 'Order No':
-                orderno_column_index = j
-                button_orderno = Button()
-                element = Tk.Button(frame, text=headings[j], font=helv36, relief='ridge',
-                                    command=lambda: self._buttonnumbersort(frame, headings, csv_table, button_orderno, orderno_column_index))
-            else:
-                element = Tk.Button(frame, text=headings[j], font=helv36, relief='ridge')
-            element.grid(row=0, column=j, columnspan=1, sticky='EWNS')
-
+            button_var = Button()
+            heading_button = Tk.Button(frame, text=headings[j], font=helv36, relief='ridge',
+                                command=lambda index=j, button=button_var, heading_name=headings[j]: self._sort(
+                                    frame=frame, headings=headings, csv_table=csv_table, button=button,
+                                    column_index=index, heading_name=heading_name))
+            heading_button.grid(row=0, column=j, columnspan=1, sticky='EWNS')
         return
 
     def __insertelements(self, frame, headings, csv_table):
         """
         Insert the elements to the table
         """
-        csv_table = self._deleterows(self.CheckVar, self.column_variables, csv_table)
+        csv_table, _ = self._deleterows(self.CheckVar, self.column_variables, csv_table)
 
-        for i in range(len(csv_table)):
-            for j in range(len(headings)):
-                element = Tk.Label(frame, text=csv_table[i][j], bg='white', relief='groove')
+        element_rows_length = len(csv_table)
+        heading_length = len(headings)
+
+        for i in range(element_rows_length):
+            for j in range(heading_length):
+                element = Tk.Label(frame, text=csv_table[i][j], font='Arial 10', bg='white', relief='groove')
                 element.grid(row=i + 1, column=j, columnspan=1, sticky='EWNS')
+
+        #Add the total amount row, showing the total value of all transactions.
+        if 'Amount' in headings:
+            amount_index = np.where(headings == 'Amount')[0][0]
+
+            # Remove the comma in the numbers in the 'Amount' column and sums the column.
+            total = str(sum(list(map(lambda n: float(''.join(n.split(','))), np.transpose(csv_table)[amount_index]))))
+
+            element = Tk.Label(frame, text=total, font='Arial 10 bold', bg='white', relief='groove')
+            element.grid(row=element_rows_length+2, column=amount_index, columnspan=1, sticky='EWNS')
+
+            if 'Description' in headings:
+                description_index = np.where(headings == 'Description')[0][0]
+
+                element = Tk.Label(frame, text='Total Amount', font='Arial 10 bold', bg='white', relief='groove')
+                element.grid(row=element_rows_length+2, column=description_index, columnspan=1, sticky='EWNS')
         return
 
     def __insertdropdown(self, frame, column, list):
@@ -601,15 +788,18 @@ class GUITable(GUIMain):
         """
         Inserts a checklist at the end of the table.
         """
-        finalcolumn_frame = Tk.Label(frame)
-        finalcolumn_frame.grid(row=1, rowspan=5000, column=column, sticky='EWNS')
+        self.finalcolumn_frame = Tk.Label(frame)
+        self.finalcolumn_frame.grid(row=1, rowspan=5000, column=column, sticky='EWNS')
 
-        checklist_frame = Tk.Frame(finalcolumn_frame)
-        self.CheckVar = self._createchecklist(checklist_frame, self.column_variables[1:], default_value=1, CheckVar=self.CheckVar)
+        self.checklist_frame = Tk.Frame(self.finalcolumn_frame)
+        self.CheckVar = self._createchecklist(self.checklist_frame, self.column_variables[1:], default_value=1, CheckVar=self.CheckVar)
 
-        self.refreshbutton = Tk.Button(finalcolumn_frame, text="Refresh", command=self.__refresh)
+        self.untickbutton = Tk.Button(self.finalcolumn_frame, text="Tick/Untick All", command=self.__tickuntickall)
 
-        checklist_frame.pack()
+        self.refreshbutton = Tk.Button(self.finalcolumn_frame, text="Refresh", command=self.__refresh)
+
+        self.checklist_frame.pack()
+        self.untickbutton.pack()
         self.refreshbutton.pack()
         return
 
@@ -625,24 +815,25 @@ class GUITable(GUIMain):
         filename_label.pack()
         return
 
-    def __insertuntickbox(self, frame, column):
-        """
-        Inserts a button to untick all boxes in the checklist.
-        """
-        untickbox_frame = Tk.Frame(frame)
-        untickbox_frame.grid(row=1, rowspan=1, column=column, sticky='EWNS')
-
-        self.untickbutton = Tk.Button(untickbox_frame, text="Untick All", command=self.__untickall)
-
-        self.untickbutton.pack()
-        return
+    # def __insertuntickbox(self, frame, column):
+    #     """
+    #     Inserts a button to untick all boxes in the checklist.
+    #     """
+    #     untickbox_frame = Tk.Frame(frame)
+    #     untickbox_frame.grid(row=1, rowspan=1, column=column, sticky='EWNS')
+    #
+    #     return
 
     def __refresh_optionmenu(self):
         """
         This function resets the table checklist when the optionmenu is clicked.
         """
         self.CheckVar = self.__initiateCheckVar()
-        self.__refresh()
+        for widget in self.finalcolumn_frame.winfo_children():
+            widget.destroy()
+        self.__updatecolumndropdown()
+        self.__insertchecklist(self.frame, len(self.headings) + 1)
+        self.window.update()
 
     def __refresh(self):
         """
@@ -652,12 +843,15 @@ class GUITable(GUIMain):
             widget.destroy()
         self.__initwindow()
 
-    def __untickall(self):
+    def __tickuntickall(self):
         """
         Unticks all boxes in the checklist when the untick box is clicked.
         """
-        for i in range(len(self.CheckVar)):
-            self.CheckVar[i].set(0)
+        if len(self.CheckVar) > 0:
+            num = self.CheckVar[0].get()
+            rev_num = not int(bool(num))
+            for i in range(len(self.CheckVar)):
+                self.CheckVar[i].set(rev_num)
         return
 
     def __initiateCheckVar(self):
@@ -670,41 +864,29 @@ class GUITable(GUIMain):
         CheckVar.append(temp)
         return CheckVar
 
-    def _buttontimesort(self, frame, headings, csv_table, button, column_index):
+    def _sort(self, frame, headings, csv_table, button, column_index, heading_name):
         """
-        Checks if the dates are ordered when the headings are clicked on.
+        Sort the columns in order
         """
-        if button.ascending == False:
-            csv_table = self._timesort(csv_table, column_index=column_index, delimiter='/')
-            self.__insertelements(frame, headings, csv_table)
-            Button.reverse(button)
-        elif button.ascending == True:
-            csv_table = self._timesort(csv_table, column_index=column_index, delimiter='/')
-            csv_table = csv_table[::-1]
-            self.__insertelements(frame, headings, csv_table)
-            Button.reverse(button)
 
-    def _buttoncidsort(self, frame, headings, csv_table, button, column_index):
-        if button.ascending == False:
-            csv_table = self._cidnumbersort(csv_table, column_index=column_index)
-            self.__insertelements(frame, headings, csv_table)
-            Button.reverse(button)
-        elif button.ascending == True:
-            csv_table = self._cidnumbersort(csv_table, column_index=column_index)
-            csv_table = csv_table[::-1]
-            self.__insertelements(frame, headings, csv_table)
-            Button.reverse(button)
+        date_headings = ['Date']
+        number_headings = ['CID/Card Number', 'Order No', 'Amount', 'Unit Price', 'Quantity', 'Gross Price']
+        text_headings = ['Description', 'Funding', 'Account', 'Activity', 'Document', 'Login', 'First Name',
+                         'Surname', 'Email', 'Product Name']
 
-    def _buttonnumbersort(self, frame, headings, csv_table, button, column_index):
-        if button.ascending == False:
-            csv_table = self._generalnumbersort(csv_table, column_index=column_index)
-            self.__insertelements(frame, headings, csv_table)
-            Button.reverse(button)
-        elif button.ascending == True:
-            csv_table = self._generalnumbersort(csv_table, column_index=column_index)
-            csv_table = csv_table[::-1]
-            self.__insertelements(frame, headings, csv_table)
-            Button.reverse(button)
+        reverse = button.ascending
+
+        if heading_name in date_headings:
+            csv_table = self._timesort(csv_table, column_index=column_index, delimiter='/', reverse=reverse)
+        elif heading_name in number_headings:
+            csv_table = self._generalnumbersort(csv_table, column_index=column_index, reverse=reverse)
+        elif heading_name in text_headings:
+            csv_table = sorted(csv_table, key=lambda l: l[column_index], reverse=reverse)
+        else:
+            return
+        self.__insertelements(frame, headings, csv_table)
+        Button.reverse(button)
+        return
 
 class Button():
     def __init__(self):

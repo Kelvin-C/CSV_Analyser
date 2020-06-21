@@ -28,7 +28,7 @@ CPU: Intel Core i7-4700MQ (2.40GHz, Quad Core)
 CSV Analyser was developed by Kelvin, the Treasurer of Funkology society 2017-18,
 for the purpose of analysing data taken from eactivities to improve the finances of Funkology.
 
-To contact, email: kelvin.chan14@imperial.ac.uk
+To contact, email: kelvin.chan14@alumni.imperial.ac.uk
 
 ////////////////////////////////////////       //////////
 //				      //      //      //
